@@ -1,0 +1,39 @@
+version: '3.9'
+x-gpu-index:
+  - &GPU_INDEX_0 '0'
+  - &GPU_INDEX_1 '1'
+
+x-vllm-template: &vllm-template
+  image: vllm/vllm-openai:latest
+  volumes:
+    - ~/.cache/huggingface:/root/.cache/huggingface
+  environment:
+    - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}
+  ipc: host
+  # command: --model ${MODEL} --served-model-name ${MODEL_NAMES} --quantization ${QUANTIZATION} --dtype auto --gpu-memory-utilization 0.95
+  command: --model ${MODEL} --dtype auto --gpu-memory-utilization 0.95
+
+services:
+  vllm_gpu_0:
+    <<: *vllm-template
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [*GPU_INDEX_0]
+              capabilities: [gpu]
+
+  vllm_gpu_1:
+    <<: *vllm-template
+    ports:
+      - "8001:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [*GPU_INDEX_1]
+              capabilities: [gpu]
